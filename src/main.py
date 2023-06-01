@@ -1,3 +1,7 @@
+"""
+Extração dos dados de tratamento dos emails 
+"""
+
 import datetime
 import os
 from selenium.webdriver.support.select import Select
@@ -175,6 +179,11 @@ def format_date_api():
     return data_atual_formatada, data_nova_formatada
 
 def run():
+    """
+    This function downloads data from an API, formats it,
+    replaces email addresses with customer names,
+    and saves it as a CSV file.
+    """
     #Limpa o diretório que os arquivos ficarao salvos
     tl.create_dir(OUTPUT_PATH, clean=True)
 
