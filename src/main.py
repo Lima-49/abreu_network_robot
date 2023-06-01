@@ -1,5 +1,5 @@
 import datetime
-import configparser
+import os
 from selenium.webdriver.support.select import Select
 import requests
 import pandas as pd
@@ -8,25 +8,9 @@ import tools as tl
 #Variaveis fixas, que serão utilizadas em todo o processo
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
-OUTPUT_PATH = r'C:\Users\Vitor Augusto\Documents\Programas\abreus_network_bot_report\files'
-CONFIG_PATH = r'C:\Users\Vitor Augusto\Documents\Programas\abreus_network_bot_report\config.txt'
-
-def get_config_data(**kwargs):
-    """
-    This function reads a configuration file and returns the value of a specified field.
-    
-    :param path: The path to the configuration file that needs to be read
-    :return: the data from the specified field and value in the configuration file located at the
-    specified path.
-    """
-    #Abrindo o arquivo de configurações
-    arq = configparser.RawConfigParser()
-    arq.read(CONFIG_PATH)
-
-    #Pegando os dados do arquivo
-    data = arq.get(kwargs['field'], kwargs['value'])
-
-    return data
+OUTPUT_PATH = 'files'
+LOGIN_USUARIO = os.environ.get("USUARIO")
+LOGIN_SENHA = os.environ.get("SENHA")
 
 def replace_emails_with_names(email, customer_dict):
     """
@@ -137,9 +121,9 @@ def get_portal_cookies():
     :return: a tuple containing a list of customers and a dictionary of cookies.
     """
 
-    #Acessando os dados do arquivo config
-    user = get_config_data(field='LOGIN', value='usuario')
-    senha = get_config_data(field='LOGIN', value='senha')
+    #Acessando os dados para logar no portal
+    user = LOGIN_USUARIO
+    senha = LOGIN_SENHA
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
     driver = tl.create_driver(headless=True)
@@ -190,41 +174,45 @@ def format_date_api():
     data_nova_formatada = data_nova_formatada.replace('-', '%2F')
     return data_atual_formatada, data_nova_formatada
 
-#Limpa o diretório que os arquivos ficarao salvos
-tl.clean_dir(OUTPUT_PATH)
+def run():
+    #Limpa o diretório que os arquivos ficarao salvos
+    tl.create_dir(OUTPUT_PATH, clean=True)
 
-#Lista de clientes cadastrados e os cookies do portal
-customer_list, cookie = get_portal_cookies()
+    #Lista de clientes cadastrados e os cookies do portal
+    customer_list, cookie = get_portal_cookies()
 
-#Cruiando o dicionario para passar como paramentro
-headersList = {
- "Cookie": f"PHPSESSID={cookie['PHPSESSID']}; lang=pt_BR",
- "Referer": API_URL, 
-}
+    #Cruiando o dicionario para passar como paramentro
+    header_list = {
+    "Cookie": f"PHPSESSID={cookie['PHPSESSID']}; lang=pt_BR",
+    "Referer": API_URL, 
+    }
 
-#formatando as datas para passar na API
-dia_atual, proximo_dia = format_date_api()
+    #formatando as datas para passar na API
+    dia_atual, proximo_dia = format_date_api()
 
-#Requisição na api para baixar os dados dos clientes
-response = requests.get(API_URL+f'?from={dia_atual}&to={proximo_dia}&page=-1',
-                        headers=headersList,
-                        timeout=100)
-result = response.text
+    #Requisição na api para baixar os dados dos clientes
+    response = requests.get(API_URL+f'?from={dia_atual}&to={proximo_dia}&page=-1',
+                            headers=header_list,
+                            timeout=100)
+    result = response.text
 
-#Salvando o resultado da API no arquivo txt, ja no padrao csv
-with open(f'{OUTPUT_PATH}\\log_view.txt', 'w', encoding='utf-8') as f:
-    f.write(result)
+    #Salvando o resultado da API no arquivo txt, ja no padrao csv
+    with open(f'{OUTPUT_PATH}/log_view.txt', 'w', encoding='utf-8') as file:
+        file.write(result)
 
-#Lendo o arquivo txt como csv
-df_api = pd.read_csv(f'{OUTPUT_PATH}\\log_view.txt')
+    #Lendo o arquivo txt como csv
+    df_api = pd.read_csv(f'{OUTPUT_PATH}/log_view.txt')
 
-#Formatando o arquivo da APi, alterando o email 'To' para o nome dos clientes
-customers_dict = create_customer_dict(customer_list, df_api)
-df_api_all = pd.DataFrame({
-    'Date': df_api['Date'],
-    'From':df_api['From'], 
-    'To': df_api['To'].apply(replace_emails_with_names,customer_dict=customers_dict), 
-    'Action': df_api['Action']
-})
+    #Formatando o arquivo da APi, alterando o email 'To' para o nome dos clientes
+    customers_dict = create_customer_dict(customer_list, df_api)
+    df_api_all = pd.DataFrame({
+        'Date': df_api['Date'],
+        'From':df_api['From'], 
+        'To': df_api['To'].apply(replace_emails_with_names,customer_dict=customers_dict), 
+        'Action': df_api['Action']
+    })
 
-df_api_all.to_csv(f'{OUTPUT_PATH}\\log_view.csv', sep=',', index=False)
+    df_api_all.to_csv(f'{OUTPUT_PATH}/log_view.csv', sep=',', index=False)
+
+if __name__ == '__main__':
+    run()

@@ -38,8 +38,10 @@ def get_cookies(driver):
     This function retrieves cookies from a web driver and returns them as a dictionary.
     
     :param driver: The "driver" parameter is an instance of a web driver, which is used to automate
-    interactions with a web browser. It can be used to navigate to web pages, interact with elements on
-    the page, and retrieve information from the page. In this specific function, the driver is used to
+    interactions with a web browser. It can be used to navigate to web pages,
+    interact with elements on
+    the page, and retrieve information from the page. In this specific function,
+    the driver is used to
     retrieve cookies
     :return: The function `get_cookies` returns a dictionary of cookies obtained from a Selenium
     webdriver instance.

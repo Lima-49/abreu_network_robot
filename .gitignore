@@ -1,3 +1,10 @@
-config.txt
-venv
-files
+#ignora tudo
+*
+
+#excecoes
+!src
+!.gitignore
+!bi_baixa_fidelidade.png
+!README.md
+!requirements.txt
+!dags
