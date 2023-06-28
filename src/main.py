@@ -1,7 +1,6 @@
 """
 Extração dos dados de tratamento dos emails 
 """
-
 import datetime
 import os
 from selenium.webdriver.support.select import Select
@@ -13,8 +12,10 @@ import tools as tl
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = 'files'
-LOGIN_USUARIO = os.environ.get("USUARIO")
-LOGIN_SENHA = os.environ.get("SENHA")
+LOGIN_USUARIO = 'admin'
+#LOGIN_USUARIO = os.environ.get("USUARIO")
+LOGIN_SENHA = 'N6wq@Ks72'
+#LOGIN_SENHA = os.environ.get("SENHA")
 
 def replace_emails_with_names(email, customer_dict):
     """
