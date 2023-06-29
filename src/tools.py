@@ -10,6 +10,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import ElementClickInterceptedException
+import configparser
+import base64
 
 def error(error_msg):
     """
@@ -23,7 +25,7 @@ def error(error_msg):
     exc_type = sys.exc_info()[0]
     exc_tb = sys.exc_info()[2]
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    path_erro = r'\\branas06av3-nrd\LAR_BRA_DIGITAL_F\Facens\Logs'
+    path_erro = r'path_error'
     today = date.today()
     name = str(fname) + '_' + str(today) + '.txt'
     arquivo = open(path_erro + '\\' + name, 'w', encoding='utf-8')
@@ -164,23 +166,6 @@ def convert(seconds):
     """
     return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
-def limpando_geral(path):
-    """
-    This function removes all files in a specified directory.
-    
-    :param path: The path of the directory where the files need to be removed
-    """
-
-    if os.path.exists(path):
-        print(path)
-        folder_dir = os.listdir(path)
-        for file in folder_dir:
-            print(file)
-            os.remove(path + '\\' + file)
-            print(file + " removido com sucesso.")
-    else:
-        print("Nenhum arquivo a ser removido")
-
 def create_dir(path, clean=False):
 
     """
@@ -223,3 +208,20 @@ def clean_dir(path, delete_folder=True):
 
                 if delete_folder:
                     os.rmdir(path + "\\" + file)
+
+def get_config_data(iten_title, iten, config_path):
+    """
+    It reads a config file and returns the value of a given item
+    :param iten_title: The title of the section in the config file
+    :param iten: the name of the parameter you want to get from the config file
+    :param config_path: The path to the config file
+    :return: A string
+    """
+
+    arq_config = configparser.RawConfigParser()
+    arq_config.read(config_path)
+
+    data = arq_config.get(iten_title, iten)
+    data_encoded = base64.b64decode(data).decode('utf-8')
+
+    return str(data_encoded)

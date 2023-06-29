@@ -12,10 +12,7 @@ import tools as tl
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = 'files'
-LOGIN_USUARIO = 'admin'
-#LOGIN_USUARIO = os.environ.get("USUARIO")
-LOGIN_SENHA = 'N6wq@Ks72'
-#LOGIN_SENHA = os.environ.get("SENHA")
+CONFIG_PATH = 'config.txt'
 
 def replace_emails_with_names(email, customer_dict):
     """
@@ -127,11 +124,11 @@ def get_portal_cookies():
     """
 
     #Acessando os dados para logar no portal
-    user = LOGIN_USUARIO
-    senha = LOGIN_SENHA
+    user = tl.get_config_data('LOGIN', 'user', CONFIG_PATH)
+    senha = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
-    driver = tl.create_driver(headless=True)
+    driver = tl.create_driver(headless=False)
     driver.get(URL)
 
     #Loga dentro do portal
