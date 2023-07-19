@@ -4,6 +4,8 @@ Extração dos dados de tratamento dos emails
 import datetime
 import os
 from selenium.webdriver.support.select import Select
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium import webdriver
 import requests
 import pandas as pd
 import tools as tl
@@ -128,7 +130,7 @@ def get_portal_cookies():
     senha = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
-    driver = tl.create_driver(headless=True)
+    driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get(URL)
 
     #Loga dentro do portal

@@ -6,6 +6,7 @@ from pathlib import Path
 import base64
 import extracao_dados as ed
 
+
 OUTPUT_PATH = os.getcwd() + "\\" + 'files' + '\\log_view.csv'
 LOGO_PATH = 'logo.png'
 
