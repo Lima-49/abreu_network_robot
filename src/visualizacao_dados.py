@@ -42,10 +42,7 @@ st.markdown(
 )
 
 #Lista de clientes que será utilizada para filtrar os graficos
-option = st.selectbox(
-    'Selecione o cliente',
-    (customer_list))
-
+option = st.selectbox('Selecione o cliente',(customer_list))
 col1, col2 = st.columns(2)
 
 with col1:
