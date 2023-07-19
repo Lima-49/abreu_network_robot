@@ -20,11 +20,13 @@ def img_to_html(img_path, width='200px'):
     )
     return img_html
 
+if os.path.isfile(OUTPUT_PATH):
+        df_data = pd.read_csv(OUTPUT_PATH, sep=',')
+        customer_list = df_data['To'].sort_values().drop_duplicates()
+
 if st.button('Atualizar Dados '):
     with st.spinner('Carregando Dados'):
         ed.run()
-        df_data = pd.read_csv(OUTPUT_PATH, sep=',')
-        customer_list = df_data['To'].sort_values().drop_duplicates()
 
 current_date = datetime.datetime.now().strftime("%d/%m/%Y")
 
