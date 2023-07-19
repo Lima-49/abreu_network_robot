@@ -1,11 +1,3 @@
-#ignora tudo
-*
-
-#excecoes
-!src
-!.gitignore
-!bi_baixa_fidelidade.png
-!README.md
-!requirements.txt
-!dags
-!airflow_pipeline
+venv
+dist 
+build
