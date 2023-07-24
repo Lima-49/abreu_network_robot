@@ -11,6 +11,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import ElementClickInterceptedException
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 import configparser
 import base64
 
@@ -86,6 +87,38 @@ def create_driver(download_dir=None):
 
     return driver
 
+def create_driver_firefox(download_dir=None):
+
+    """
+    It creates a Firefox webdriver with the specified options.
+
+    :param download_dir: The directory where you want to download the files to
+    :return: A webdriver object
+    """
+    firefox_options = FirefoxOptions()
+
+    # Enable headless mode for the Firefox webdriver
+    firefox_options.add_argument("--headless")
+
+    if download_dir is not None:
+        download_dir = str(download_dir)
+        preferences = {
+            "browser.download.dir": download_dir,
+            "browser.download.folderList": 2,
+            "browser.helperApps.neverAsk.saveToDisk": "application/octet-stream"
+        }
+        firefox_options.set_preference("browser.download.manager.showWhenStarting", False)
+        firefox_options.set_preference("browser.download.manager.useWindow", False)
+        firefox_options.set_preference("browser.download.manager.focusWhenStarting", False)
+        firefox_options.set_preference("browser.download.manager.showAlertOnComplete", False)
+        firefox_options.set_preference("browser.download.manager.closeWhenDone", True)
+        for key, value in preferences.items():
+            firefox_options.set_preference(key, value)
+
+    driver = webdriver.Firefox(options=firefox_options)
+    driver.implicitly_wait(20)
+
+    return driver
 def clicking(path, driver, element='elemento', refresh=False, by='xpath', limit=3, wait=True):
     """
     The function "clicking" clicks on a specified element on a webpage using Selenium WebDriver 
