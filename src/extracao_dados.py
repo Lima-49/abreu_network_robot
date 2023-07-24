@@ -130,7 +130,7 @@ def get_portal_cookies():
     senha = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
-    driver = tl.create_driver(headless=True)
+    driver = tl.create_driver()
     #driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get(URL)
 

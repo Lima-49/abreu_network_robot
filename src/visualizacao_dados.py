@@ -22,6 +22,7 @@ def img_to_html(img_path, width='200px'):
     return img_html
 
 customer_list = []
+df_data = None
 
 if os.path.isfile(OUTPUT_PATH):
         df_data = pd.read_csv(OUTPUT_PATH, sep=',')

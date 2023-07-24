@@ -57,27 +57,29 @@ def get_cookies(driver):
 
     return cookies
 
-def create_driver(download_dir=None, headless=False):
+def create_driver(download_dir=None):
     """
     It creates a Chrome webdriver with the specified options.
 
     :param download_dir: The directory where you want to download the files to
-    :param headless: If True, the browser will run in headless mode, defaults to False (optional)
     :return: A webdriver object
     """
     chrome_options = Options()
 
-    if headless:
-        chrome_options.headless=True
+    # Enable headless mode for the Chrome webdriver
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-dev-shm-usage")
 
     if download_dir is not None:
-        download_dir=str(download_dir)
-
-
-    preferences = {"download.default_directory": download_dir,
-                "directory_upgrade": True,
-                "safebrowsing.enabled": True}
-    chrome_options.add_experimental_option("prefs", preferences)
+        download_dir = str(download_dir)
+        preferences = {
+            "download.default_directory": download_dir,
+            "directory_upgrade": True,
+            "safebrowsing.enabled": True
+        }
+        chrome_options.add_experimental_option("prefs", preferences)
 
     driver = webdriver.Chrome(options=chrome_options)
     driver.implicitly_wait(20)
