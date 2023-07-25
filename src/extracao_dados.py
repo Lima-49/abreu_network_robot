@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.select import Select
-from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
 import datetime
 import os
 import streamlit as st
@@ -19,12 +19,16 @@ API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = os.getcwd() + "\\" + 'files'
 CONFIG_PATH = 'config.txt'
 
-@st.cache_resource
 def get_driver():
-    options = Options()
-    options.add_argument('--disable-gpu')
-    options.add_argument('--headless')
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    firefoxOptions = Options()
+    firefoxOptions.add_argument("--headless")
+    service = Service(GeckoDriverManager().install())
+    driver = webdriver.Firefox(
+        options=firefoxOptions,
+        service=service,
+    )
+
+    return driver
 
 def replace_emails_with_names(email, customer_dict):
     """
@@ -141,7 +145,6 @@ def get_portal_cookies():
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
     driver = get_driver()
-    #driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get(URL)
 
     #Loga dentro do portal
