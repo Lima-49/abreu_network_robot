@@ -58,6 +58,7 @@ def get_cookies(driver):
 
     return cookies
 
+
 def create_driver(download_dir=None):
     """
     It creates a Chrome webdriver with the specified options.
@@ -119,6 +120,7 @@ def create_driver_firefox(download_dir=None):
     driver.implicitly_wait(20)
 
     return driver
+
 def clicking(path, driver, element='elemento', refresh=False, by='xpath', limit=3, wait=True):
     """
     The function "clicking" clicks on a specified element on a webpage using Selenium WebDriver 

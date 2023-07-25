@@ -1,11 +1,14 @@
 """
 Extração dos dados de tratamento dos emails 
 """
-import datetime
-import os
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.select import Select
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium import webdriver
+import datetime
+import os
+import streamlit as st
 import requests
 import pandas as pd
 import tools as tl
@@ -15,6 +18,13 @@ URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = os.getcwd() + "\\" + 'files'
 CONFIG_PATH = 'config.txt'
+
+@st.cache_resource
+def get_driver():
+    options = Options()
+    options.add_argument('--disable-gpu')
+    options.add_argument('--headless')
+    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 def replace_emails_with_names(email, customer_dict):
     """
@@ -130,7 +140,7 @@ def get_portal_cookies():
     senha = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
-    driver = tl.create_driver_firefox()
+    driver = get_driver()
     #driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.get(URL)
 
