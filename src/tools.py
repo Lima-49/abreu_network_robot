@@ -58,7 +58,6 @@ def get_cookies(driver):
 
     return cookies
 
-
 def create_driver(download_dir=None):
     """
     It creates a Chrome webdriver with the specified options.
