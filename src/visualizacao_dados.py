@@ -7,7 +7,7 @@ import base64
 import pytz
 import extracao_dados as ed
 
-OUTPUT_PATH = os.getcwd() + "\\" + 'files' + '\\log_view.csv'
+OUTPUT_PATH = os.getcwd() + "/" + 'files' + '/log_view.csv'
 LOGO_PATH = 'logo.png'
 
 def img_to_bytes(img_path):
@@ -31,7 +31,7 @@ else:
 if st.button('Atualizar Dados '):
     with st.spinner('Carregando Dados'):
         ed.run()
-        
+
 st.text(os.listdir(os.getcwd() + "\\" + 'files'))
 df_data = pd.read_csv(OUTPUT_PATH, sep=',')
 customer_list = df_data['To'].sort_values().drop_duplicates()
