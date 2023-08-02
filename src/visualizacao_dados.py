@@ -4,8 +4,8 @@ import os
 import datetime
 from pathlib import Path
 import base64
+import pytz
 import extracao_dados as ed
-
 
 OUTPUT_PATH = os.getcwd() + "\\" + 'files' + '\\log_view.csv'
 LOGO_PATH = 'logo.png'
@@ -32,7 +32,11 @@ if st.button('Atualizar Dados '):
     with st.spinner('Carregando Dados'):
         ed.run()
 
-current_date = datetime.datetime.now().strftime("%d/%m/%Y")
+# Set the timezone to São Paulo, Brazil (UTC-3)
+saopaulo_tz = pytz.timezone('America/Sao_Paulo')
+
+# Get the current date and time in the São Paulo timezone
+current_date = datetime.datetime.now(saopaulo_tz).strftime("%d/%m/%Y")
 
 st.markdown(
     f"""
