@@ -31,7 +31,8 @@ else:
 if st.button('Atualizar Dados '):
     with st.spinner('Carregando Dados'):
         ed.run()
-
+        
+st.text(os.listdir(os.getcwd() + "\\" + 'files'))
 df_data = pd.read_csv(OUTPUT_PATH, sep=',')
 customer_list = df_data['To'].sort_values().drop_duplicates()
 
