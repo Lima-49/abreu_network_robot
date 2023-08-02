@@ -21,16 +21,18 @@ def img_to_html(img_path, width='200px'):
     )
     return img_html
 
-customer_list = []
-df_data = None
-
 if os.path.isfile(OUTPUT_PATH):
-        df_data = pd.read_csv(OUTPUT_PATH, sep=',')
-        customer_list = df_data['To'].sort_values().drop_duplicates()
-
+    df_data = pd.read_csv(OUTPUT_PATH, sep=',')
+    customer_list = df_data['To'].sort_values().drop_duplicates()
+else:
+    st.subheader("Clique em Atualizar os dados para os gráficos carregarem")
+    
 if st.button('Atualizar Dados '):
     with st.spinner('Carregando Dados'):
         ed.run()
+
+df_data = pd.read_csv(OUTPUT_PATH, sep=',')
+customer_list = df_data['To'].sort_values().drop_duplicates()
 
 # Set the timezone to São Paulo, Brazil (UTC-3)
 saopaulo_tz = pytz.timezone('America/Sao_Paulo')
