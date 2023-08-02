@@ -26,7 +26,7 @@ if os.path.isfile(OUTPUT_PATH):
     customer_list = df_data['To'].sort_values().drop_duplicates()
 else:
     st.subheader("Clique em Atualizar os dados para os gráficos carregarem")
-    print(os.listdir(os.getcwd()))
+    st.text(os.listdir(os.getcwd()))
     
 if st.button('Atualizar Dados '):
     with st.spinner('Carregando Dados'):
