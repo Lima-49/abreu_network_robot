@@ -3,9 +3,9 @@ Extração dos dados de tratamento dos emails
 """
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
-from webdriver_manager.firefox import GeckoDriverManager
 import datetime
 import os
 import streamlit as st
@@ -20,15 +20,18 @@ OUTPUT_PATH = os.getcwd() + "\\" + 'files'
 CONFIG_PATH = 'config.txt'
 
 def get_driver():
-    firefoxOptions = Options()
-    firefoxOptions.add_argument("--headless")
-    service = Service(GeckoDriverManager().install())
-    driver = webdriver.Firefox(
-        options=firefoxOptions,
-        service=service,
-    )
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--disable-features=NetworkService")
+    options.add_argument("--window-size=1920x1080")
+    options.add_argument("--disable-features=VizDisplayCompositor")
 
-    return driver
+    driver =  webdriver.Chrome(options=options)
+
+    return driver 
 
 def replace_emails_with_names(email, customer_dict):
     """
