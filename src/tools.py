@@ -10,7 +10,6 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import ElementClickInterceptedException
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 import configparser
 import base64
@@ -58,7 +57,7 @@ def get_cookies(driver):
 
     return cookies
 
-def create_driver(download_dir=None):
+def create_driver_chrome(download_dir=None, headless=True):
     """
     It creates a Chrome webdriver with the specified options.
 
@@ -66,12 +65,6 @@ def create_driver(download_dir=None):
     :return: A webdriver object
     """
     chrome_options = Options()
-
-    # Enable headless mode for the Chrome webdriver
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--disable-dev-shm-usage")
 
     if download_dir is not None:
         download_dir = str(download_dir)
@@ -82,9 +75,17 @@ def create_driver(download_dir=None):
         }
         chrome_options.add_experimental_option("prefs", preferences)
 
-    driver = webdriver.Chrome(options=chrome_options)
-    driver.implicitly_wait(20)
+    if headless:
+        chrome_options.add_argument("--headless")
 
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-features=NetworkService")
+    chrome_options.add_argument("--window-size=1920x1080")
+    chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+
+    driver = webdriver.Chrome(options=chrome_options)
     return driver
 
 def create_driver_firefox(download_dir=None):
