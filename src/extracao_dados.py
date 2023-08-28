@@ -1,15 +1,10 @@
 """
 Extração dos dados de tratamento dos emails 
 """
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.select import Select
-import datetime
 import os
-import streamlit as st
+import datetime
 import requests
+from selenium.webdriver.support.select import Select
 import pandas as pd
 import tools as tl
 
@@ -19,152 +14,88 @@ API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = os.getcwd() + "\\" + 'files'
 CONFIG_PATH = 'config.txt'
 
-def get_driver():
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-features=NetworkService")
-    options.add_argument("--window-size=1920x1080")
-    options.add_argument("--disable-features=VizDisplayCompositor")
-
-    driver =  webdriver.Chrome(options=options)
-
-    return driver 
-
 def replace_emails_with_names(email, customer_dict):
     """
-    This function takes an email and a dictionary of customer names and emails, and returns the
-    corresponding customer name if the email is found in the dictionary, otherwise it returns the
-    original email.
-    
-    :param email: The email address that needs to be replaced with a customer name
-    :param customer_dict: A dictionary where the keys are customer names and the values are lists of
-    their associated email addresses
-    :return: either the name of the customer associated with the given email address if it exists 
-    in the
-    customer dictionary, or the original email address if it does not exist in the dictionary.
+    Esta função recebe um email e um dicionário de nomes de clientes e emails, 
+    e retorna o nome correspondente do cliente se o email for encontrado no dicionário, 
+    caso contrário, retorna o email original.
+
+    :param email: O endereço de email que precisa ser substituído por um nome de cliente
+    :param customer_dict: Um dicionário onde as chaves são nomes de clientes 
+    e os valores são listas de seus endereços de email associados
+    :return: ou o nome do cliente associado ao endereço de email fornecido
     """
 
+    #alterando a string para caixa baixa
+    normalized_email = email.lower()
+
+    #Loop ao redor do dicionario com os nomes dos clientes e seus respectivos emails
     for name, emails in customer_dict.items():
-        if (email.lower() in [em.lower() for em in emails]):
+
+        #Verifica se o email a ser procurado esta dentro do dicionario
+        if normalized_email in (em.lower() for em in emails):
+
+            #Se encontrar retorna o nome do cliente referente ao email
             return name
-    return email
+
+    #Caso contrario retorna o email normal
+    return normalized_email
 
 def create_customer_dict(customers_list, data_frame):
     """
-    This function creates a dictionary where the keys are customer names and the values are lists of
-    email addresses that belong to that customer.
-    
-    :param customers_list: A list of strings representing the names of customers
-    :param data_frame: It is a pandas DataFrame that contains email data
-    which contains the email addresses of the recipients of the emails
-    :return: The function `create_customer_dict` is returning a dictionary where the keys 
-    are the names
-    of the customers in `customers_list` and the values are lists of email addresses from the
-    `data_frame` that end with the customer's domain name (either '.com.br' or '.com').
+    Esta função cria um dicionário onde as chaves são nomes de clientes
+    e os valores são listas de endereços de email que pertencem a esse cliente.
+
+    :param customers_list: Uma lista de strings representando os nomes dos clientes
+    :param data_frame: É um DataFrame do pandas que contém dados de email,
+    contendo os endereços de email dos destinatários dos emails
+    :return: retorna um dicionário onde as chaves são os nomes dos clientes e
+    os valores são listas de endereços de email do data_frame que terminam com o domínio do cliente.
     """
+    #inicializa o dicionario que ira armazenar os usuarios e emails
     customer_dict = {}
 
+    #Loop atraves da lista de clientes extraido do portal
     for customer in customers_list:
+
+        #Adicionando no dicionario os emails relacionados com o nome do cliente
         customer_dict[customer] = [email for email in data_frame['To'] if
                                    (email.endswith('@'+customer.lower()+'.com.br')) or
                                    (email.endswith('@'+customer.lower()+'.com'))]
 
+    #retorna o dicionario com os emails dos clientes
     return customer_dict
-
-def replace_custom_names(customer_names):
-    """
-    This function replaces specific customer names with their corresponding corrected names from a
-    dictionary.
-    
-    :param customer_names: a list of customer names
-    replaced with their correct names
-    :return: the updated list of customer names after replacing any custom names with their
-    corresponding standardized names from the `diff_custom` dictionary.
-    """
-    diff_custom = {
-        'aguia':'aguiasecuritizadora',
-        'bombinhassummer':'bombinhassummerbeach', 
-        'dutoclean': 'dutocleanbauru',
-        'fabricenter': 'fabricenter470',
-        'fazcomunicacao': 'fazcomunicacaovisual',
-        'galli': 'galliatacadista',
-        'impacto': 'impactoesports',
-        'jcleletronica': 'jcleletronicaindustrial',
-        'mailinspector': 'filter.mailinspector',
-        'plantfort': 'plantfortfertil',
-        'primedigital': 'primemidiadigital',
-        'quinta': 'quintadonino',
-        'raysolar': 'raysolarbrasil',
-        'reset': 'resetmairinque',
-        'revar': 'revarcondicionado',
-        'rodoflex': 'rodoflexpneus',
-        'sany': 'sanydobrasil',
-        'supernagai': 'supermercadosnagai',
-        'agrotecagro': 'agrotecagroquimica',
-        'barulhinhobomchips': 'barulhinhobom',
-        'marcospaulo': 'marcospauloimoveis',
-        'cortedobra': 'cortedobraseguranca',
-        'ortobaby': 'ortobabycalcados',
-        'arinteli': 'arinteligenciatributaria',
-    }
-
-    for diff_name in diff_custom.items():
-        list_index = customer_names.index(diff_name[0])
-        customer_names[list_index] = diff_name[1]
-
-    return customer_names
-
-def replace_numeric_chars(string):
-    """
-    The function replaces certain numeric characters in a string with corresponding alphabetic
-    characters.
-    
-    :param string: a string that contains alphanumeric characters
-    :return: the input string with any numeric characters replaced with their corresponding 
-    alphabetic
-    characters according to the replacements dictionary. However, if the input string is 
-    '5stintas' or 'c3', no replacements will be made.
-    """
-    replacements = {'0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '8': 'b'}
-    for char, replacement in replacements.items():
-        if string not in ['5stintas','c3']:
-            string = string.replace(char, replacement)
-    return string
 
 def get_portal_cookies():
     """
-    This function logs into a web portal, retrieves a list of customers, 
-    and returns the cookies for the
-    session.
-    :return: a tuple containing a list of customers and a dictionary of cookies.
+    Esta função faz login em um portal da web, 
+    recupera uma lista de clientes e retorna os cookies da sessão.
+    :retorno: uma tupla contendo uma lista de clientes e um dicionário de cookies.
     """
-
     #Acessando os dados para logar no portal
     user = tl.get_config_data('LOGIN', 'user', CONFIG_PATH)
-    senha = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
+    psw = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
     driver = tl.create_driver_chrome()
     driver.get(URL)
 
-    #Loga dentro do portal
-    tl.clicking(element='clicando em login',path='email',by='name',driver=driver).click()
-    tl.clicking(element='passando o user',path='email',by='name',driver=driver).send_keys(user)
-
-    tl.clicking(element='clicando em senha',path='password',by='name',driver=driver).click()
-    tl.clicking(element='passando a senha',path='password',by='name',driver=driver).send_keys(senha)
-
+    #Logando dentro do portal
+    tl.clicking(element='clicando em login',path='email',btype='name',driver=driver).click()
+    tl.clicking(element='passando o user',path='email',btype='name',driver=driver).send_keys(user)
+    tl.clicking(element='clicando em senha',path='password',btype='name',driver=driver).click()
+    tl.clicking(element='passandosenha',path='password',btype='name',driver=driver).send_keys(psw)
     tl.clicking(element='clicando no login',path="//input[@type='submit']",driver=driver).click()
 
     #Peagando a lista de clientes do portal
     tl.clicking(element='Linked Account',path="//*[text()='Linked Accounts']",driver=driver).click()
-    drop_down = tl.clicking(element='lista de clientes',path='hijackName',by='name',driver=driver)
+    drop_down = tl.clicking(element='lista clientes',path='hijackName',btype='name',driver=driver)
     drop_down_obj = Select(drop_down)
 
+    #Transformando a lista dos clientes em uma array
     customers_list = [opt.text for opt in drop_down_obj.options]
+
+    #Removendo o primeiro index que fica em branco
     customers_list.pop(0)
 
     #Armazendo os cookies do portal
@@ -177,11 +108,10 @@ def get_portal_cookies():
 
 def format_date_api():
     """
-    This Python function formats the current date and the next day's date in a specific
-    format for use
-    in an API.
-    :return: a tuple with two strings: the current date formatted as "mm/dd/yyyy" and the next day's
-    date formatted as "mm/dd/yyyy", both with the forward slash replaced by "-".
+    Esta função formata a data atual e a data do próximo dia em um formato específico.
+    :retorno: uma tupla com duas strings: a data atual formatada como "mm/dd/yyyy" 
+    e a data do próximo dia formatada como "mm/dd/yyyy",
+    ambas com a barra inclinada substituída por "-".
     """
 
     # Obtém a data atual
@@ -189,17 +119,19 @@ def format_date_api():
     data_atual_formatada = data_atual.strftime("%m-%d-%Y")
     data_atual_formatada = data_atual_formatada.replace('-', '%2F')
 
-    # Adiciona um dia
+    # Adiciona um dia - proximo dia
     data_nova = data_atual + datetime.timedelta(days=1)
     data_nova_formatada = data_nova.strftime("%m-%d-%Y")
     data_nova_formatada = data_nova_formatada.replace('-', '%2F')
+
+    #Retorna o dia atual e o proximo dia foramatado
     return data_atual_formatada, data_nova_formatada
 
 def run():
     """
-    This function downloads data from an API, formats it,
-    replaces email addresses with customer names,
-    and saves it as a CSV file.
+    Esta função faz o download de dados de uma API, 
+    formata-os, substitui os endereços de email
+    por nomes de clientes e os salva como um arquivo CSV.
     """
     #Limpa o diretório que os arquivos ficarao salvos
     tl.create_dir(OUTPUT_PATH, clean=True)
@@ -207,7 +139,7 @@ def run():
     #Lista de clientes cadastrados e os cookies do portal
     customer_list, cookie = get_portal_cookies()
 
-    #Cruiando o dicionario para passar como paramentro
+    #Criando o dicionario para passar como paramentro
     header_list = {
     "Cookie": f"PHPSESSID={cookie['PHPSESSID']}; lang=pt_BR",
     "Referer": API_URL, 
@@ -229,6 +161,9 @@ def run():
     #Lendo o arquivo txt como csv
     df_api = pd.read_csv(f'{OUTPUT_PATH}/log_view.txt')
 
+    #Removendo os valroes duplicados, para diminuir o scopo
+    df_api.drop_duplicates(subset='To', inplace=True)
+
     #Formatando o arquivo da APi, alterando o email 'To' para o nome dos clientes
     customers_dict = create_customer_dict(customer_list, df_api)
     df_api_all = pd.DataFrame({
@@ -238,7 +173,10 @@ def run():
         'Action': df_api['Action']
     })
 
+    #Filtra o df removendo valores '@' da coluna 'To'
     df_api_all = df_api_all.loc[~df_api_all['To'].str.contains('@')]
+
+    #Salva o arquivo de log
     df_api_all.to_csv(f'{OUTPUT_PATH}/log_view.csv', sep=',', index=False)
 
 if __name__ == '__main__':

@@ -1,9 +1,15 @@
+"""
+Caixa de ferramentas com as
+principais funcoes utilizadas
+"""
 import os
 import sys
 import time
 from datetime import date
 import glob
 from pathlib import Path
+import configparser
+import base64
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
@@ -11,8 +17,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
-import configparser
-import base64
 
 def error(error_msg):
     """
@@ -121,7 +125,7 @@ def create_driver_firefox(download_dir=None):
 
     return driver
 
-def clicking(path, driver, element='elemento', refresh=False, by='xpath', limit=3, wait=True):
+def clicking(path, driver, element='elemento', refresh=False, btype='xpath', limit=3, wait=True):
     """
     The function "clicking" clicks on a specified element on a webpage using Selenium WebDriver 
     and can handle errors and refresh the page if needed.
@@ -134,8 +138,8 @@ def clicking(path, driver, element='elemento', refresh=False, by='xpath', limit=
 
     :param refresh: a boolean indicating whether to refresh the page before attempting to click the
     element, defaults to False (optional)
-    :param by: the method used to locate the element (e.g. 'xpath', 'id', 'class_name'), defaults to
-    xpath (optional)
+    :param type: the method used to locate the element (e.g. 'xpath', 'id', 'class_name')
+    defaults to xpath (optional)
     param limit: The maximum number of attempts to click the element before giving up, defaults to 3
     (optional)
     :param wait: A boolean parameter that determines whether to wait for the element to be visible
@@ -157,26 +161,27 @@ def clicking(path, driver, element='elemento', refresh=False, by='xpath', limit=
     try:
         if wait:
             wait = WebDriverWait(driver, 60)
-            wait.until(ec.visibility_of_element_located((by, path)))
+            wait.until(ec.visibility_of_element_located((btype, path)))
 
-        obj_to_find = driver.find_element(by, path)
+        obj_to_find = driver.find_element(btype, path)
         actions = ActionChains(driver)
         actions.move_to_element(obj_to_find).perform()
 
-        found_element = driver.find_element(by, path)
+        found_element = driver.find_element(btype, path)
         print(f">>>Sucesso {element}>>>")
 
     except ElementClickInterceptedException:
         print(f"<<<Erro ao {element}, tentando novamente>>>")
-        found_element = clicking(element, path, refresh, by, limit - 1, driver)
+        found_element = clicking(element, path, refresh, btype, limit - 1, driver)
 
 
     return found_element
 
 def download_checker(folder):
     """
-    This function checks if a download is still in progress by looking for temporary files and waits
-    until they are finished before printing a message indicating that the download is complete.
+    This function checks if a download is still in progress type looking for temporary files
+    and waits until they are finished before printing a message
+    indicating that the download is complete.
     
     :param folder: The folder parameter is a string that represents the path to the folder where the
     downloaded files are stored
