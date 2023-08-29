@@ -92,7 +92,7 @@ def create_driver_chrome(download_dir=None, headless=True):
     driver = webdriver.Chrome(options=chrome_options)
     return driver
 
-def create_driver_firefox(download_dir=None):
+def create_driver_firefox(download_dir=None, headless=True):
 
     """
     It creates a Firefox webdriver with the specified options.
@@ -102,8 +102,9 @@ def create_driver_firefox(download_dir=None):
     """
     firefox_options = FirefoxOptions()
 
-    # Enable headless mode for the Firefox webdriver
-    firefox_options.add_argument("--headless")
+    if headless:
+        # Enable headless mode for the Firefox webdriver
+        firefox_options.add_argument("--headless")
 
     if download_dir is not None:
         download_dir = str(download_dir)

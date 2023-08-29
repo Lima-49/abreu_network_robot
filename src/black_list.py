@@ -1,4 +1,7 @@
 
+"""
+Automação da BlackList
+"""
 import os
 import datetime
 import requests
@@ -22,7 +25,7 @@ def get_portal_cookies():
     psw = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
-    driver = tl.create_driver_chrome()
+    driver = tl.create_driver_chrome(headless=False)
     driver.get(URL)
 
     #Logando dentro do portal
@@ -35,10 +38,7 @@ def get_portal_cookies():
     #Armazendo os cookies do portal
     cookies = tl.get_cookies(driver)
 
-    #Finalizando o driver
-    driver.quit()
-
-    return cookies
+    return cookies, driver
 
 def format_date_api():
     """
@@ -61,12 +61,10 @@ def format_date_api():
     #Retorna o dia atual e o proximo dia foramatado
     return data_atual_formatada, data_nova_formatada
 
-def extract_emails_log():
+def extract_emails_log(authorization):
     """
     The function extrai o log de emails enviados filtrando pela data
     """
-    #Pegando os cookies do portal
-    authorization = get_portal_cookies()
 
     #formatando as datas para passar na API
     dia_atual, proximo_dia = format_date_api()
@@ -89,6 +87,14 @@ def extract_emails_log():
 
 def run():
 
+    """
+    Função criada para automatizar a alimentação
+    da base de dados com os IPs infectados
+    """
+    #Pegando os cookies do portal
+    authorization, driver =  get_portal_cookies()
+    extract_emails_log(authorization)
+
     #Lendo o arquivo txt como csv
     df_api = pd.read_csv(f'{OUTPUT_PATH}/log_view.txt')
     df_api.to_excel(f'{OUTPUT_PATH}/teste.xlsx', index=False)
@@ -96,11 +102,24 @@ def run():
     #Filtra o arquivo extraido mantendo apenas valores "Blacklisted"
     df_filt = df_api.loc[df_api['Action']=='Blacklisted']
 
-    #Verifica se existe algun item filtrado
-    if df_filt.shape[0] > 0:
-        ip_list = df_filt['Source IP']
-    
+    #Acessando a pagina da Blacklist do portal
+    tl.clicking(element="Selecionando Blacklist",
+                path='//*[@id="seg-menuce"]/ul/li[12]',
+                driver=driver).click()
 
+    #passando os ips na area de texto do portal
+    ip_blacklist = "\n".join(df_filt['Source IP'].drop_duplicates())
+    tl.clicking(element='Passado a lista de IPs, dentro do portal',
+                path='entries',
+                btype='name',
+                driver=driver).send_keys(ip_blacklist)
+
+    #ADicionando na blacklist
+    tl.clicking(element='Clicando no botãoo de adcicionar',
+                path='add_blacklist', btype='name', driver=driver).click()
+
+    #Fechando o navegador
+    driver.quit()
 
 if __name__ == '__main__':
     run()
