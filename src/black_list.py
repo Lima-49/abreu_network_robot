@@ -115,9 +115,13 @@ def run():
                 driver=driver).send_keys(ip_blacklist)
 
     #ADicionando na blacklist
-    tl.clicking(element='Clicando no botãoo de adcicionar',
-                path='add_blacklist', btype='name', driver=driver).click()
-
+    try:
+        tl.clicking(element='Clicando no botãoo de adcicionar',
+                    path='add_blacklist', btype='name', driver=driver).click()
+    except TimeoutError:
+        tl.clicking(element='Clicando no botãoo de adcicionar',
+                    path='add_blacklist', btype='name', driver=driver).click()
+        
     #Fechando o navegador
     driver.quit()
 
