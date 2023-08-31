@@ -121,7 +121,7 @@ def run():
     except TimeoutError:
         tl.clicking(element='Clicando no botãoo de adcicionar',
                     path='add_blacklist', btype='name', driver=driver).click()
-        
+
     #Fechando o navegador
     driver.quit()
 
