@@ -66,5 +66,5 @@ with col1:
         options = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
 
 with col2:
-    t = st.time_input('Que horas o robô deve ser executado', datetime.time(8, 45))
-    st.write('Alarme configurado para', t)
+    time = st.time_input('Que horas o robô deve ser executado', datetime.time(8, 45))
+    st.write('Alarme configurado para', time)
