@@ -4,6 +4,7 @@ Automação da BlackList
 """
 import os
 import datetime
+import time
 import requests
 import pandas as pd
 import tools as tl
@@ -13,6 +14,7 @@ URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = os.getcwd() + "\\" + 'files'
 CONFIG_PATH = 'config.txt'
+LOG_PATH = r'database\log_execucao.xlsx'
 
 def get_portal_cookies():
     """
@@ -85,45 +87,100 @@ def extract_emails_log(authorization):
     with open(f'{OUTPUT_PATH}/emails_log.txt', 'w', encoding='utf-8') as file:
         file.write(result)
 
+def insert_log(**kwargs):
+    """
+    `insert_log` reads an Excel file, adds execution data to it, and saves the updated
+    file.
+    """
+    #Abrindo o arquivo de execucao
+    df_log = pd.read_excel(LOG_PATH)
+
+    line_index = df_log.shape[0]
+
+    #Adicionando os dados de execucao no df
+    for field in kwargs.items():
+        df_log.at[line_index,field[0]]=field[1]
+
+    #salvando o arquivo
+    df_log.to_excel(LOG_PATH, index=False)
+
 def run():
 
     """
     Função criada para automatizar a alimentação
     da base de dados com os IPs infectados
     """
-    #Pegando os cookies do portal
-    authorization, driver =  get_portal_cookies()
-    extract_emails_log(authorization)
-
-    #Lendo o arquivo txt como csv
-    df_api = pd.read_csv(f'{OUTPUT_PATH}/log_view.txt')
-    df_api.to_excel(f'{OUTPUT_PATH}/teste.xlsx', index=False)
-
-    #Filtra o arquivo extraido mantendo apenas valores "Blacklisted"
-    df_filt = df_api.loc[df_api['Action']=='Blacklisted']
-
-    #Acessando a pagina da Blacklist do portal
-    tl.clicking(element="Selecionando Blacklist",
-                path='//*[@id="seg-menuce"]/ul/li[12]',
-                driver=driver).click()
-
-    #passando os ips na area de texto do portal
-    ip_blacklist = "\n".join(df_filt['Source IP'].drop_duplicates())
-    tl.clicking(element='Passado a lista de IPs, dentro do portal',
-                path='entries',
-                btype='name',
-                driver=driver).send_keys(ip_blacklist)
-
-    #ADicionando na blacklist
     try:
-        tl.clicking(element='Clicando no botãoo de adcicionar',
-                    path='add_blacklist', btype='name', driver=driver).click()
-    except TimeoutError:
-        tl.clicking(element='Clicando no botãoo de adcicionar',
-                    path='add_blacklist', btype='name', driver=driver).click()
 
-    #Fechando o navegador
-    driver.quit()
+        #tempo inicial da execucao
+        tempo_inicio = time.time()
+
+        #Pegando os cookies do portal
+        authorization, driver =  get_portal_cookies()
+        extract_emails_log(authorization)
+
+        #Lendo o arquivo txt como csv
+        df_api = pd.read_csv(f'{OUTPUT_PATH}/log_view.txt')
+        df_api.to_excel(f'{OUTPUT_PATH}/teste.xlsx', index=False)
+
+        #Filtra o arquivo extraido mantendo apenas valores "Blacklisted"
+        df_filt = df_api.loc[df_api['Action']=='Blacklisted']
+
+        #Acessando a pagina da Blacklist do portal
+        tl.clicking(element="Selecionando Blacklist",
+                    path='//*[@id="seg-menuce"]/ul/li[12]',
+                    driver=driver).click()
+
+        #passando os ips na area de texto do portal
+        ip_blacklist = "\n".join(df_filt['Source IP'].drop_duplicates())
+        tl.clicking(element='Passado a lista de IPs, dentro do portal',
+                    path='entries',
+                    btype='name',
+                    driver=driver).send_keys(ip_blacklist)
+
+        #ADicionando na blacklist
+        try:
+            tl.clicking(element='Clicando no botãoo de adcicionar',
+                        path='add_blacklist', btype='name', driver=driver).click()
+        except TimeoutError:
+            tl.clicking(element='Clicando no botãoo de adcicionar',
+                        path='add_blacklist', btype='name', driver=driver).click()
+
+        #Fechando o navegador
+        driver.quit()
+
+        #tempo final da execucao
+        tempo_final = time.time()
+
+        #Adicionando os dados de execucao no log
+        actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
+        actual_time = datetime.datetime.today().strftime('%H:%M')
+        execution_time = tl.convert(tempo_final-tempo_inicio)
+        insert_log(NOME_ROBO='black_list',
+                   DATA_EXECUCAO=actual_date,
+                   HORA_EXECUCAO=actual_time,
+                   TEMPO_EXECUCAO=execution_time,
+                   STATUS='Sucesso',
+                   DETALHES='Robo excutado com sucesso'
+                   )
+    except Exception as error:
+        #Finaliza o driver
+        driver.quit()
+
+        #tempo final da execucao
+        tempo_final = time.time()
+
+        #Adiciona os dados de execucao no log
+        actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
+        actual_time = datetime.datetime.today().strftime('%H:%M')
+        execution_time = tl.convert()
+        insert_log(NOME_ROBO='black_list',
+            DATA_EXECUCAO=actual_date,
+            HORA_EXECUCAO=actual_time,
+            TEMPO_EXECUCAO=execution_time,
+            STATUS='Falha',
+            DETALHES=error
+            )
 
 if __name__ == '__main__':
     run()

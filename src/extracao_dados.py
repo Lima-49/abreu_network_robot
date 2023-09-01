@@ -3,6 +3,7 @@ Extração dos dados de tratamento dos emails
 """
 import os
 import datetime
+import time
 import requests
 from selenium.webdriver.support.select import Select
 import pandas as pd
@@ -11,8 +12,9 @@ import tools as tl
 #Variaveis fixas, que serão utilizadas em todo o processo
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
-OUTPUT_PATH = os.getcwd() + "\\" + 'files'
+OUTPUT_PATH = os.getcwd() + "/" + 'files'
 CONFIG_PATH = 'config.txt'
+LOG_PATH = r'database\log_execucao.xlsx'
 
 def replace_emails_with_names(email, customer_dict):
     """
@@ -127,57 +129,110 @@ def format_date_api():
     #Retorna o dia atual e o proximo dia foramatado
     return data_atual_formatada, data_nova_formatada
 
+def insert_log(**kwargs):
+    """
+    `insert_log` reads an Excel file, adds execution data to it, and saves the updated
+    file.
+    """
+    #Abrindo o arquivo de execucao
+    df_log = pd.read_excel(LOG_PATH)
+
+    line_index = df_log.shape[0]
+
+    #Adicionando os dados de execucao no df
+    for field in kwargs.items():
+        df_log.at[line_index,field[0]]=field[1]
+
+    #salvando o arquivo
+    df_log.to_excel(LOG_PATH, index=False)
+
 def run():
     """
     Esta função faz o download de dados de uma API, 
     formata-os, substitui os endereços de email
     por nomes de clientes e os salva como um arquivo CSV.
     """
-    #Limpa o diretório que os arquivos ficarao salvos
-    tl.create_dir(OUTPUT_PATH, clean=True)
 
-    #Lista de clientes cadastrados e os cookies do portal
-    customer_list, cookie = get_portal_cookies()
+    try:
 
-    #Criando o dicionario para passar como paramentro
-    header_list = {
-    "Cookie": f"PHPSESSID={cookie['PHPSESSID']}; lang=pt_BR",
-    "Referer": API_URL, 
-    }
+        #tempo inicial da execucao
+        tempo_inicio = time.time()
 
-    #formatando as datas para passar na API
-    dia_atual, proximo_dia = format_date_api()
+        #Limpa o diretório que os arquivos ficarao salvos
+        tl.create_dir(OUTPUT_PATH, clean=True)
 
-    #Requisição na api para baixar os dados dos clientes
-    response = requests.get(API_URL+f'?from={dia_atual}&to={proximo_dia}&page=-1',
-                            headers=header_list,
-                            timeout=100)
-    result = response.text
+        #Lista de clientes cadastrados e os cookies do portal
+        customer_list, cookie = get_portal_cookies()
 
-    #Salvando o resultado da API no arquivo txt, ja no padrao csv
-    with open(f'{OUTPUT_PATH}/log_view.txt', 'w', encoding='utf-8') as file:
-        file.write(result)
+        #Criando o dicionario para passar como paramentro
+        header_list = {
+        "Cookie": f"PHPSESSID={cookie['PHPSESSID']}; lang=pt_BR",
+        "Referer": API_URL, 
+        }
 
-    #Lendo o arquivo txt como csv
-    df_api = pd.read_csv(f'{OUTPUT_PATH}/log_view.txt')
+        #formatando as datas para passar na API
+        dia_atual, proximo_dia = format_date_api()
 
-    #Removendo os valroes duplicados, para diminuir o scopo
-    df_api.drop_duplicates(subset='To', inplace=True)
+        #Requisição na api para baixar os dados dos clientes
+        response = requests.get(API_URL+f'?from={dia_atual}&to={proximo_dia}&page=-1',
+                                headers=header_list,
+                                timeout=100)
+        result = response.text
 
-    #Formatando o arquivo da APi, alterando o email 'To' para o nome dos clientes
-    customers_dict = create_customer_dict(customer_list, df_api)
-    df_api_all = pd.DataFrame({
-        'Date': df_api['Date'],
-        'From':df_api['From'], 
-        'To': df_api['To'].apply(replace_emails_with_names,customer_dict=customers_dict), 
-        'Action': df_api['Action']
-    })
+        #Salvando o resultado da API no arquivo txt, ja no padrao csv
+        with open(f'{OUTPUT_PATH}/log_view.txt', 'w', encoding='utf-8') as file:
+            file.write(result)
 
-    #Filtra o df removendo valores '@' da coluna 'To'
-    df_api_all = df_api_all.loc[~df_api_all['To'].str.contains('@')]
+        #Lendo o arquivo txt como csv
+        df_api = pd.read_csv(f'{OUTPUT_PATH}/log_view.txt')
 
-    #Salva o arquivo de log
-    df_api_all.to_csv(f'{OUTPUT_PATH}/log_view.csv', sep=',', index=False)
+        #Removendo os valroes duplicados, para diminuir o scopo
+        df_duplicates = df_api.drop_duplicates(subset='To')
 
+        #Formatando o arquivo da APi, alterando o email 'To' para o nome dos clientes
+        customers_dict = create_customer_dict(customer_list, df_api)
+        df_api_all = pd.DataFrame({
+            'Date': df_duplicates['Date'],
+            'From':df_duplicates['From'], 
+            'To': df_duplicates['To'].apply(replace_emails_with_names,customer_dict=customers_dict), 
+            'Action': df_duplicates['Action']
+        })
+
+        #Filtra o df removendo valores '@' da coluna 'To'
+        df_api_all = df_api_all.loc[~df_api_all['To'].str.contains('@')]
+
+        #Salva o arquivo de log
+        df_api_all.to_csv(f'{OUTPUT_PATH}/log_view.csv', sep=',', index=False)
+
+        #tempo final da execucao
+        tempo_final = time.time()
+
+        #Adicionando os dados de execucao no log
+        actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
+        actual_time = datetime.datetime.today().strftime('%H:%M')
+        execution_time = tl.convert(tempo_final-tempo_inicio)
+        insert_log(NOME_ROBO='extracao_dados',
+                   DATA_EXECUCAO=actual_date,
+                   HORA_EXECUCAO=actual_time,
+                   TEMPO_EXECUCAO=execution_time,
+                   STATUS='Sucesso',
+                   DETALHES='Robo excutado com sucesso'
+                   )
+
+    except Exception as error:
+        #tempo final da execucao
+        tempo_final = time.time()
+
+        #Adiciona os dados de execucao no log
+        actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
+        actual_time = datetime.datetime.today().strftime('%H:%M')
+        execution_time = tl.convert()
+        insert_log(NOME_ROBO='extracao_dados',
+            DATA_EXECUCAO=actual_date,
+            HORA_EXECUCAO=actual_time,
+            TEMPO_EXECUCAO=execution_time,
+            STATUS='Falha',
+            DETALHES=error
+            )
 if __name__ == '__main__':
     run()
