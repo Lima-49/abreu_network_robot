@@ -13,7 +13,7 @@ import tools as tl
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = os.getcwd() + "/" + 'files'
-CONFIG_PATH = 'config.txt'
+CONFIG_PATH = r'config\config.txt'
 LOG_PATH = r'database\log_execucao.xlsx'
 
 def replace_emails_with_names(email, customer_dict):
@@ -208,6 +208,7 @@ def run():
         tempo_final = time.time()
 
         #Adicionando os dados de execucao no log
+        print("Salvando No Log")
         actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
         actual_time = datetime.datetime.today().strftime('%H:%M')
         execution_time = tl.convert(tempo_final-tempo_inicio)
@@ -226,7 +227,7 @@ def run():
         #Adiciona os dados de execucao no log
         actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
         actual_time = datetime.datetime.today().strftime('%H:%M')
-        execution_time = tl.convert()
+        execution_time = tl.convert(tempo_final-tempo_inicio)
         insert_log(NOME_ROBO='extracao_dados',
             DATA_EXECUCAO=actual_date,
             HORA_EXECUCAO=actual_time,

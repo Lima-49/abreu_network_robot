@@ -13,7 +13,7 @@ import tools as tl
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = os.getcwd() + "\\" + 'files'
-CONFIG_PATH = 'config.txt'
+CONFIG_PATH = r'config\config.txt'
 LOG_PATH = r'database\log_execucao.xlsx'
 
 def get_portal_cookies():
@@ -27,7 +27,7 @@ def get_portal_cookies():
     psw = tl.get_config_data('LOGIN', 'password', CONFIG_PATH)
 
     #Cria o objeto driver, responsavel por acessar os dados dentro da web
-    driver = tl.create_driver_chrome(headless=False)
+    driver = tl.create_driver_chrome(headless=True)
     driver.get(URL)
 
     #Logando dentro do portal
@@ -147,6 +147,7 @@ def run():
                         path='add_blacklist', btype='name', driver=driver).click()
 
         #Fechando o navegador
+        print("Finalizando o driver")
         driver.quit()
 
         #tempo final da execucao
@@ -156,7 +157,7 @@ def run():
         actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
         actual_time = datetime.datetime.today().strftime('%H:%M')
         execution_time = tl.convert(tempo_final-tempo_inicio)
-        insert_log(NOME_ROBO='black_list',
+        insert_log(NOME_ROBO='Black List',
                    DATA_EXECUCAO=actual_date,
                    HORA_EXECUCAO=actual_time,
                    TEMPO_EXECUCAO=execution_time,
@@ -173,8 +174,8 @@ def run():
         #Adiciona os dados de execucao no log
         actual_date = datetime.datetime.today().strftime('%d/%m/%Y')
         actual_time = datetime.datetime.today().strftime('%H:%M')
-        execution_time = tl.convert()
-        insert_log(NOME_ROBO='black_list',
+        execution_time = tl.convert(tempo_final-tempo_inicio)
+        insert_log(NOME_ROBO='Black List',
             DATA_EXECUCAO=actual_date,
             HORA_EXECUCAO=actual_time,
             TEMPO_EXECUCAO=execution_time,

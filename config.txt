@@ -1,3 +1,0 @@
-[LOGIN]
-user = YWRtaW4=
-password = TjZ3cUBLczcy
