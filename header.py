@@ -14,7 +14,7 @@ import base64
 import streamlit as st
 import pytz
 OUTPUT_PATH = os.getcwd() + "/" + 'images'
-LOGO_PATH = OUTPUT_PATH+'\logo.png'
+LOGO_PATH = OUTPUT_PATH + '/logo.png'
 
 def img_to_bytes(img_path):
     """
