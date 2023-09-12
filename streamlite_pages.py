@@ -8,7 +8,7 @@ from st_pages import Page, show_pages
 # should be
 show_pages(
     [
-        Page("src/home_page.py", "Dashboard Emails", "🏠"),
-        Page("src/black_list_page.py", "Black List", "🧱")
+        Page("home_page.py", "Dashboard Emails", "🏠"),
+        Page("black_list_page.py", "Black List", "🧱")
     ]
 )

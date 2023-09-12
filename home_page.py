@@ -4,11 +4,13 @@ e ativar algumas ferrametnas da empresa Abreu Networks
 """
 import os
 import pandas as pd
+import altair as alt
 import streamlit as st
 import header
 import extracao_dados as ed
 
 OUTPUT_PATH = os.getcwd() + "/" + 'files' + '/log_view.csv'
+LOG_PATH = r'database\log_execucao.xlsx'
 
 def amostragem_dados():
     """
@@ -94,5 +96,132 @@ def amostragem_dados():
     df_tres.set_index('From', inplace=True)
     st.bar_chart(df_tres['Qtd'])
 
+def dount_chart_execution(df_filt):
+    """
+    The function `donut_chart_execution` takes a filtered DataFrame as input, combines the
+    'DATA_EXECUCAO' and 'HORA_EXECUCAO' columns into a single 'DATA_HORA_EXECUCAO' column, sorts the
+    DF by 'DATA_HORA_EXECUCAO' in descending order, creates a donut chart based on the 'STATUS'
+    column, and adds the total number of rows in the center of the chart.
+    
+    :param df_filt: The parameter `df_filt` is a DataFrame that contains the data to be used for
+    creating the donut chart. It should have the following columns:
+    :return: a donut chart visualization created using the Altair library.
+    The donut chart represents
+    the count of successful and failed executions in a DataFrame. The chart also includes the total
+    number of rows in the DataFrame displayed in the center of the donut.
+    """
+    # Combine as colunas 'DATA_EXECUCAO' e 'HORA_EXECUCAO' em uma única coluna 'DATA_HORA_EXECUCAO'
+    df_filt['DH_EXECUCAO']=pd.to_datetime(df_filt['DATA_EXECUCAO']+' '+df_filt['HORA_EXECUCAO'])
+
+    # Ordene o DataFrame pelo campo 'DATA_HORA_EXECUCAO' do mais recente para o mais antigo
+    df_filt.sort_values(by='DH_EXECUCAO', ascending=False, inplace=True)
+
+    # Calcular o número total de linhas
+    total_linhas = len(df_filt)
+
+    color_mapping = alt.Scale(domain=['Sucesso', 'Falha'], range=['#6BF58D', '#F55D59'])
+
+    # Criar um gráfico de anel
+    chart = alt.Chart(df_filt).mark_arc().transform_aggregate(
+        count='count()',
+        groupby=['STATUS']
+    ).encode(
+        theta='count:Q',
+        color=alt.Color('STATUS:N', scale=color_mapping),  # Configurar cores com base no mapeamento
+    ).properties(
+        width=300,
+        height=300
+    )
+
+    # Adicionar o número total de linhas no centro do anel
+    text = alt.Chart(pd.DataFrame({'total_linhas': [total_linhas]})).mark_text(
+        size=24,
+        color='white',
+        fontSize=50,
+        align='center',  # Centralizar horizontalmente
+        baseline='middle'  # Centralizar verticalmente
+    ).encode(
+        text='total_linhas:Q'
+    )
+
+    # Combinar o gráfico de anel e o texto
+    donut_chart = (chart + text).configure_arc(
+        innerRadius=70  # Tamanho do buraco no meio do anel
+    )
+
+    return donut_chart
+
+def line_chart_execution(df_filt):
+    """
+    The `line_chart_execution` creates a line chart with points to represent the success and
+    failure status of executions over time.
+    
+    :param df_filt: The parameter `df_filt` is a DataFrame that contains the data to be plotted
+    in the line chart. It should have the following columns:
+    :return: a combined line chart and scatter plot.
+    """
+    df_bar = df_filt
+    df_bar['STATUS'] = df_bar['STATUS'].replace({'Sucesso':1, 'Falha':0})
+    df_bar['ID'] = [x for x in range(df_bar.shape[0])]
+
+    # Criar a especificação do gráfico de barras
+    chart = alt.Chart(df_bar).mark_line().encode(
+        x=alt.X('ID:N', axis=alt.Axis(title='Data de Execução'), sort=None),
+        y=alt.Y('STATUS:Q', axis=alt.Axis(title='STATUS'))
+    ).properties(
+        title='Contagem de Sucesso e Falha por Data de Execução'
+    )
+
+    # Adicionar pontos quando y=0
+    points = alt.Chart(df_bar).mark_point(color='red', size=100).encode(
+        x=alt.X('ID:N'),
+        y=alt.Y('STATUS:Q'),
+        tooltip=['DETALHES:N']
+    )
+
+    # Combinar o gráfico de linha com os pontos
+    combined_chart = chart + points
+
+    return combined_chart
+
+def main_page():
+    """
+    The `main_page` function creates a webpage with two tabs, one for data execution and another for
+    execution logs, and displays charts and data related to the execution logs.
+    """
+    #Header da pagina
+    header.main()
+
+    #Criando tabs para separar os itens da pagina
+    tab1, tab2 = st.tabs(["Execução", "Log de Execução"])
+
+    with tab1:
+        amostragem_dados()
+
+    with tab2:
+        #Abindo o arquivo de log
+        df_log = pd.read_excel(LOG_PATH)
+        df_filt = df_log.loc[df_log['NOME_ROBO']=='extracao_dados']
+
+         # Combine as colunas 'DATA_EXECUCAO' e 'HORA_EXECUCAO' em uma única coluna 'DH_EXECUCAO'
+        df_filt['DH_EXECUCAO']=pd.to_datetime(df_filt['DATA_EXECUCAO']+' '+df_filt['HORA_EXECUCAO'])
+
+        # Ordene o DataFrame pelo campo 'DATA_HORA_EXECUCAO' do mais recente para o mais antigo
+        df_filt.sort_values(by='DH_EXECUCAO', ascending=False, inplace=True)
+
+        st.header("Log de Execução")
+        st.dataframe(df_filt.head(), hide_index=True)
+
+        col1,col2 = st.columns(2)
+
+        with col1:
+            #Criando um grafico do tipo donuts, mostrando quantidade de execucao
+            donut_chart = dount_chart_execution(df_filt)
+            st.altair_chart(donut_chart, theme='streamlit')
+        with col2:
+            #Criando um grafico para indicar os status e detalhes da execucao
+            line_chart = line_chart_execution(df_filt)
+            st.altair_chart(line_chart, use_container_width=True, theme='streamlit')
+
 if __name__ == '__main__':
-    amostragem_dados()
+    main_page()

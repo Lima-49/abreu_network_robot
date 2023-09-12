@@ -9,10 +9,9 @@ executes the `config_run()` function at the end. The `config_run()` function all
 select the execution period for a robot and does not return any value.
 """
 import datetime
-import calendar
-import time
+import os
+import requests
 import streamlit as st
-import schedule
 import altair as alt
 import pandas as pd
 import header
@@ -22,414 +21,7 @@ import black_list as bl
 actual_date = datetime.datetime.today()
 LOG_PATH = r'database\log_execucao.xlsx'
 CONFIG_RUN_PATH = r'database\config_execucao.xlsx'
-
-def schedule_onetime(robot, config_values):
-    """
-    The `schedule_onetime` allows the user to schedule the execution of a robot at a specific
-    date and time.
-    """
-
-    if config_values is not None:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-        #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            date = config_values['DATA_INICIO']
-            start_date = st.date_input("Escolha a data de inicio",date,format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            horario = datetime.datetime.strptime(config_values['HORARIO'], "%H:%M:%S")
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        horario,
-                                        step=datetime.timedelta(minutes=1))
-
-        # Calcula a data e hora de execução
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-
-        # Agendando a execução
-        schedule.every().day.at(scheduled_time.strftime('%H:%M:%S')).do(robot)
-
-    else:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-        #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            start_date = st.date_input("Escolha a data de inicio",actual_date,format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        datetime.time(8,45),
-                                        step=datetime.timedelta(minutes=1))
-
-        # Calcula a data e hora de execução
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-
-        # Agendando a execução
-        schedule.every().day.at(scheduled_time.strftime('%H:%M:%S')).do(robot)
-
-    #Salvando o dicionario e retornando a config
-    config_values = {'NOME_ROBO':'Black List',
-                    'PERIODO':'Uma vez',
-                    'DATA_INICIO':start_date,
-                    'HORARIO':execution_time}
-
-    return f"Robô agendado para execução em: {scheduled_time}", schedule, config_values
-
-def schedule_daily(robot, config_values):
-    """
-    The `schedule_daily` allows the user to schedule a robot to execute daily at a specified
-    start date and time, with a specified number of executions per day.
-    """
-
-    if config_values is None:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-        #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            date = config_values['DATA_INICIO']
-            start_date = st.date_input("Escolha a data de inicio",date,format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            horario = datetime.datetime.strptime(config_values['HORARIO'], "%H:%M:%S")
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        horario,
-                                        step=datetime.timedelta(minutes=1))
-
-        #Quantas vezes por dia deve ser executado
-        execution_times = st.number_input('Quantas vezes deve executar no dia', step=1)
-
-        # Calcula a data e hora de execução
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-
-        # Agendando a execução múltiplas vezes no mesmo dia
-        for _ in range(execution_times):
-            schedule.every().day.at(scheduled_time.strftime('%H:%M:%S')).do(robot)
-            scheduled_time += datetime.timedelta(days=1)
-    else:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-        #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            date = config_values['DATA_INICIO']
-            start_date = st.date_input("Escolha a data de inicio", date, format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            horario = config_values['HORARIO']
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        horario,
-                                        step=datetime.timedelta(minutes=1))
-
-        #Quantas vezes por dia deve ser executado
-        execution_times = st.number_input('Quantas vezes deve executar no dia', step=1)
-
-        # Calcula a data e hora de execução
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-
-        # Agendando a execução múltiplas vezes no mesmo dia
-        for _ in range(execution_times):
-            schedule.every().day.at(scheduled_time.strftime('%H:%M:%S')).do(robot)
-            scheduled_time += datetime.timedelta(days=1)
-
-    #Salvando o dicionario e retornando a config
-    config_values = {'NOME_ROBO':'Black List',
-                    'PERIODO':'Diariamente',
-                    'DATA_INICIO':start_date,
-                    'HORARIO':execution_time, 
-                    'QTD_AO_DIA':execution_times}
-
-    return f"""Robô agendado para execução diária a cada {execution_times}
-            vezes em: {start_date.strftime('%d/%m/%Y')}
-            às {execution_time.strftime('%H:%M')}""", schedule, config_values
-
-def schedule_weekly(robot, config_values):
-    """
-    The `schedule_weekly` function allows users to schedule a robot to execute at specific times and
-    days of the week on a weekly basis.
-    """
-
-    if config_values is None:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-        #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            date = config_values['DATA_INICIO']
-            start_date = st.date_input("Escolha a data de inicio",date,format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            horario = datetime.datetime.strptime(config_values['HORARIO'], "%H:%M:%S")
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        horario,
-                                        step=datetime.timedelta(minutes=1))
-
-        #Cria dois conteiners para ordernar na pagina
-        col3, col4 = st.columns(2)
-
-        #Terceiro conteiner
-        with col3:
-            #Quantas vezes por dia deve ser executado
-            execution_times = st.number_input('Quantas vezes deve executar no dia', step=1)
-
-        #Quarto conteiner
-        with col4:
-
-            #Input para selecionar quais os dias da semana deve ser executado
-            one_time_op = st.multiselect(
-            'Quais dias da semana gostaria de executar o robô',
-            ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Todos os dias'],
-            ['Segunda', 'Terça'])
-
-            #Faz uma validação
-            if 'Todos os dias' in one_time_op:
-                #Se selecionado "Todos os dias" deve alterar a lista para todos os dias
-                one_time_op = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
-
-        # Calcula a data e hora de execução
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-        all_days_list = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
-
-        # Agendar para os dias selecionados
-        for day in one_time_op:
-            day_index = all_days_list.index(day)
-            day_at_datetime = datetime.timedelta(days=(day_index-scheduled_time.weekday()) % 7)
-            scheduled_day = scheduled_time + day_at_datetime
-
-            for _ in range(execution_times):
-                schedule.every().day.at(scheduled_day.time().strftime('%H:%M:%S')).do(robot)
-                scheduled_day += datetime.timedelta(weeks=1)
-    else:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-        #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            date = config_values['DATA_INICIO']
-            start_date = st.date_input("Escolha a data de inicio",date,format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            horario = config_values['HORARIO']
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        horario,
-                                        step=datetime.timedelta(minutes=1))
-
-        #Cria dois conteiners para ordernar na pagina
-        col3, col4 = st.columns(2)
-
-        #Terceiro conteiner
-        with col3:
-            #Quantas vezes por dia deve ser executado
-            execution_times = st.number_input('Quantas vezes deve executar no dia', step=1)
-
-        #Quarto conteiner
-        with col4:
-
-            #Input para selecionar quais os dias da semana deve ser executado
-            one_time_op = st.multiselect(
-            'Quais dias da semana gostaria de executar o robô',
-            ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Todos os dias'],
-            config_values['DIAS_SEMANA'].split(" "))
-
-            #Faz uma validação
-            if 'Todos os dias' in one_time_op:
-                #Se selecionado "Todos os dias" deve alterar a lista para todos os dias
-                one_time_op = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
-
-        # Calcula a data e hora de execução
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-        all_days_list = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']
-
-        # Agendar para os dias selecionados
-        for day in one_time_op:
-            day_index = all_days_list.index(day)
-            day_at_datetime = datetime.timedelta(days=(day_index-scheduled_time.weekday()) % 7)
-            scheduled_day = scheduled_time + day_at_datetime
-
-            for _ in range(execution_times):
-                schedule.every().day.at(scheduled_day.time().strftime('%H:%M:%S')).do(robot)
-                scheduled_day += datetime.timedelta(weeks=1)
-
-    #Salvando o dicionario e retornando a config
-    config_values = {'NOME_ROBO':'Black List',
-                    'PERIODO':'Semanalmente',
-                    'DATA_INICIO':start_date,
-                    'HORARIO':execution_time, 
-                    'QTD_AO_DIA':execution_times, 
-                    'DIAS_SEMANA': " ".join(one_time_op)}
-
-    return f"""Robô agendado para execução semanal a cada {execution_times}
-            vezes nos dias: {', '.join(one_time_op)}""", schedule, config_values
-
-def schedule_monthly(robot, config_values):
-    """
-    The `schedule_monthly` allows the user to schedule a robot to execute on specific months
-    and days of the month.
-    """
-
-    if config_values is None:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-        #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            date = config_values['DATA_INICIO']
-            start_date = st.date_input("Escolha a data de inicio",date,format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            horario = datetime.datetime.strptime(config_values['HORARIO'], "%H:%M:%S")
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        horario,
-                                        step=datetime.timedelta(minutes=1))
-
-        #Cria dois conteiners para ordernar na pagina
-        col3, col4 = st.columns(2)
-
-        #Terceiro conteiner
-        with col3:
-
-            #Input para selecionar quais os meses para executar o robo
-            one_time_op = st.multiselect(
-            'Quais os meses gostaria de executar o robô',
-            ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
-            'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-            ['Janeiro'])
-
-        #Quart conteiner
-        with col4:
-
-            #Input para selecionar quais os dias deve executar
-            execution_day = st.multiselect(
-            'Quais dias do mês gostaria de executar o robô',
-            [str(x) for x in range(1,32,1)],
-            ['1', '2'])
-
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-
-        # Dicionário para mapear nomes dos meses para números
-        months_mapping = {
-            'Janeiro': 1,
-            'Fevereiro': 2,
-            'Março': 3,
-            'Abril': 4,
-            'Maio': 5,
-            'Junho': 6,
-            'Julho': 7,
-            'Agosto': 8,
-            'Setembro': 9,
-            'Outubro': 10,
-            'Novembro': 11,
-            'Dezembro': 12
-        }
-
-        for month in one_time_op:
-            month_number = months_mapping[month]
-            days_in_month = calendar.monthrange(scheduled_time.year, month_number)[1]
-
-            for day in execution_day:
-                if day.isdigit() and 1 <= int(day) <= days_in_month:
-                    scheduled_day = scheduled_time.replace(month=month_number, day=int(day))
-                    schedule.every().day.at(scheduled_day.time().strftime('%H:%M:%S')).do(robot)
-    else:
-        #Cria dois conteiners para ordernar na pagina
-        col1, col2 = st.columns(2)
-
-       #Primeiro conteiner
-        with col1:
-            #Input da data inicial de execução do robo
-            date = config_values['DATA_INICIO']
-            start_date = st.date_input("Escolha a data de inicio",date,format="DD/MM/YYYY")
-
-        #Segundo conteiner
-        with col2:
-            #Input do horario que o robo deve ser executo
-            horario = config_values['HORARIO']
-            execution_time = st.time_input('Que horas o robô deve ser executado',
-                                        horario,
-                                        step=datetime.timedelta(minutes=1))
-
-        #Cria dois conteiners para ordernar na pagina
-        col3, col4 = st.columns(2)
-
-        #Terceiro conteiner
-        with col3:
-
-            #Input para selecionar quais os meses para executar o robo
-            one_time_op = st.multiselect(
-            'Quais os meses gostaria de executar o robô',
-            ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
-            'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-            config_values['MESES'].split(" "))
-
-        #Quart conteiner
-        with col4:
-
-            #Input para selecionar quais os dias deve executar
-            execution_day = st.multiselect(
-            'Quais dias do mês gostaria de executar o robô',
-            [str(x) for x in range(1,32,1)],
-            config_values['DIAS_DO_MES'].split(" "))
-
-        scheduled_time = datetime.datetime.combine(start_date, execution_time)
-
-        # Dicionário para mapear nomes dos meses para números
-        months_mapping = {
-            'Janeiro': 1,
-            'Fevereiro': 2,
-            'Março': 3,
-            'Abril': 4,
-            'Maio': 5,
-            'Junho': 6,
-            'Julho': 7,
-            'Agosto': 8,
-            'Setembro': 9,
-            'Outubro': 10,
-            'Novembro': 11,
-            'Dezembro': 12
-        }
-
-        for month in one_time_op:
-            month_number = months_mapping[month]
-            days_in_month = calendar.monthrange(scheduled_time.year, month_number)[1]
-
-            for day in execution_day:
-                if day.isdigit() and 1 <= int(day) <= days_in_month:
-                    scheduled_day = scheduled_time.replace(month=month_number, day=int(day))
-                    schedule.every().day.at(scheduled_day.time().strftime('%H:%M:%S')).do(robot)
-
-    #Salvando o dicionario e retornando a config
-    config_values = {'NOME_ROBO':'Black List',
-                    'PERIODO':'Mensal',
-                    'DATA_INICIO':start_date,
-                    'HORARIO':execution_time, 
-                    'MESES':" ".join(one_time_op), 
-                    'DIAS_DO_MES': " ".join(execution_day)}
-
-    return f"""Robô agendado para execução mensal nos meses: {', '.join(one_time_op)}
-             nos dias: {', '.join(execution_day)}""", schedule, config_values
+OUTPUT_PATH = os.getcwd() + "\\" + 'files'
 
 def dount_chart_execution(df_filt):
     """
@@ -519,6 +111,33 @@ def line_chart_execution(df_filt):
 
     return combined_chart
 
+def chart_execution(df_show):
+    """
+    The function `chart_execution` takes a dataframe as input
+    counts the occurrences of each country in
+    a specific column, and creates a bar chart using Altair to visualize the counts.
+
+    :param df_show: The parameter `df_show` is a pandas DataFrame
+    that contains the data to be used for
+    creating the chart. It should have a column named 'Pais'
+    which represents the countries, and the
+    function will count the occurrences of each country in this column
+    :return: The function `chart_execution` returns an Altair bar chart object.
+    """
+    # Conte o número de ocorrências de cada país
+    country_counts = df_show['Pais'].value_counts().reset_index()
+    country_counts.columns = ['Pais', 'Contagem']
+
+    # Crie um gráfico de barras com Altair
+    chart = alt.Chart(country_counts).mark_bar().encode(
+        x=alt.X('Contagem:Q', title='Contagem'),
+        y=alt.Y('Pais:N', title='País', sort='-x')
+    )
+
+    # Personalize o gráfico
+    chart = chart.properties(width=600)
+    return chart
+
 def read_config_path(bot_option):
     """
     This function reads a configuration file and returns a dictionary of values for a specific robot
@@ -568,6 +187,22 @@ def insert_config_path(config_values):
 
     df_concat.to_excel(CONFIG_RUN_PATH, index=False)
 
+def call_api(ip_address):
+    """
+    The function `call_api` takes an IP address as input and returns the country name associated wit
+    that IP address using the ip2location.io API.
+    
+    :param ip_address: The `ip_address` parameter is a string representing the IP address for which
+    want to retrieve the country name
+    :return: the country name associated with the given IP address.
+    """
+
+    key = '6C9230AA6FCFBB5F51A9B096E2259EFE'
+    url = f'https://api.ip2location.io/?key={key}&ip={ip_address}'
+    response = requests.get(url, timeout=10)
+
+    return response.json()['country_name'] if response.status_code == 200 else None
+
 def config_run():
     """
     The `config_run()` creates a markdown header for a mail security report and allows the user
@@ -578,62 +213,50 @@ def config_run():
     header.main()
 
     #Criando tabs para separar os itens da pagina
-    tab1, tab2 = st.tabs(["Configuração", "Log de Execução"])
+    tab1, tab2 = st.tabs(["Execução", "Log de Execução"])
 
     with tab1:
-        #Selector para o usuario selecionar qual robo ele quer configurar
-        robot_list = ['Black List']
-        robot = None
-        bot_option = st.selectbox('Selecione o robô',(robot_list))
-        config_values = read_config_path(bot_option)
+        #Clica no botão atualizar os dados
+        st.subheader("Clique em Rodar para executar o robô")
+        if st.button('Rodar'):
 
-        #Atualiza a variavel robor dependendo da opcao selecionada
-        if bot_option == 'Black List':
-            robot = bl.run
+            #Enquanto rodar o robo para extrair os arquivos, fica carregando
+            with st.spinner('Executando robo'):
 
-        #Verifica se ja teve alguma configuracao anterior
-        if config_values is not None:
-            op_list = ["Uma vez", "Diariamente", "Semanalmente", "Mensal"]
-            op_value = config_values['PERIODO']
-            position = op_list.index(op_value)
-        else:
-            position = 0
+                #Rodando o robo black list
+                bl.run()
 
-        #Input tipo RADIO para selecionar o modo do robo ser executado
-        execution_op = st.radio(
-            "Selecione o periodo de execução",
-            ["Uma vez", "Diariamente", "Semanalmente", "Mensal"], horizontal=True, index=position)
+                #Abrindo o arquivo extraido
+                df_bl = pd.read_csv(f'{OUTPUT_PATH}/black_list.csv')
 
-        if execution_op == 'Uma vez':
-            msg, task, config_values = schedule_onetime(robot, config_values)
+                #Removendo os valores duplicados
+                ip_list = df_bl['Source IP'].drop_duplicates()
 
-        #Se for executado diariamente
-        elif execution_op == 'Diariamente':
-            msg, task, config_values = schedule_daily(robot, config_values)
+                #Criando um dicionario com os ips e com os paises respectivos
+                coutry_list = list(map(call_api, ip_list))
 
-        #Se for semanalente
-        elif execution_op == 'Semanalmente':
-            msg, task, config_values = schedule_weekly(robot, config_values)
+                #Salvando em um df
+                df_show = pd.DataFrame()
+                df_show['Ip'] = ip_list
+                df_show['Pais'] = coutry_list
+                df_show.to_excel(f'{OUTPUT_PATH}/black_list.xlsx', index=False)
 
-        #Se for mensalmente
-        elif execution_op == 'Mensal':
-            msg, task, config_values = schedule_monthly(robot, config_values)
+                #soltando os baloes
+                st.balloons()
 
-        #Botao para confirmar as configuracoes
-        confi_btn = st.button("Confirmar")
+        #mostrando o novo  df criado
+        df_show.read_excel(f'{OUTPUT_PATH}/black_list.xlsx')
+        st.dataframe(df_show, width=800)
 
-        #Botao para confirmar a configuracao
-        if confi_btn:
-            st.success(msg)
-            insert_config_path(config_values)
-            while True:
-                time.sleep(1)
-                task.run_pending()
+        # Exiba o gráfico no Streamlit
+        chart = chart_execution(df_show)
+        st.title("Países mais frequentes")
+        st.altair_chart(chart, use_container_width=True)
 
     with tab2:
         #Abindo o arquivo de log
         df_log = pd.read_excel(LOG_PATH)
-        df_filt = df_log.loc[df_log['NOME_ROBO']==bot_option]
+        df_filt = df_log.loc[df_log['NOME_ROBO']=='Black List']
 
         # Combine as colunas 'DATA_EXECUCAO' e 'HORA_EXECUCAO' em uma única coluna 'DH_EXECUCAO'
         df_filt['DH_EXECUCAO']=pd.to_datetime(df_filt['DATA_EXECUCAO']+' '+df_filt['HORA_EXECUCAO'])

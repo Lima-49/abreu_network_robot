@@ -150,6 +150,9 @@ def run():
         print("Finalizando o driver")
         driver.quit()
 
+        #salvando o arquivo black_list
+        df_filt.to_csv(f'{OUTPUT_PATH}/black_list.csv', index=False)
+
         #tempo final da execucao
         tempo_final = time.time()
 
