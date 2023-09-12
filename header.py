@@ -8,12 +8,13 @@ HTML. It should be a string representing the file path, including the file name 
 current date, a centered title, and a logo.
 """
 import datetime
+import os
 from pathlib import Path
 import base64
 import streamlit as st
 import pytz
-
-LOGO_PATH = r'images\logo.png'
+OUTPUT_PATH = os.getcwd() + "/" + 'images'
+LOGO_PATH = OUTPUT_PATH+'\logo.png'
 
 def img_to_bytes(img_path):
     """
