@@ -44,9 +44,6 @@ def amostragem_dados():
     #Transforma em uma lista a quantidade de emails da coluna To
     customer_list = df_data['To'].sort_values().drop_duplicates()
 
-    #header da pagina
-    header.main()
-
     #Lista de clientes que será utilizada para filtrar os graficos
     option = st.selectbox('Selecione o cliente',(customer_list))
 
