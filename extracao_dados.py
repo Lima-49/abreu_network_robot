@@ -13,8 +13,9 @@ import tools as tl
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
 OUTPUT_PATH = os.getcwd() + "/" + 'files'
-CONFIG_PATH = r'config\config.txt'
-LOG_PATH = r'database\log_execucao.xlsx'
+CONFIG_PATH = os.getcwd() + "/" + 'config/config.txt'
+DATABASE = os.getcwd() + "/" + 'database'
+LOG_PATH = DATABASE + '/log_execucao.xlsx'
 
 def replace_emails_with_names(email, customer_dict):
     """

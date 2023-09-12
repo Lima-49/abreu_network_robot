@@ -12,9 +12,10 @@ import tools as tl
 #Variaveis fixas, que serão utilizadas em todo o processo
 URL = 'https://filter.mailinspector.com.br/login/index.php'
 API_URL = 'https://filter.mailinspector.com.br/login/mailLogViewer.php'
-OUTPUT_PATH = os.getcwd() + "\\" + 'files'
-CONFIG_PATH = r'config\config.txt'
-LOG_PATH = r'database\log_execucao.xlsx'
+OUTPUT_PATH = os.getcwd() + "/" + 'files'
+CONFIG_PATH = os.getcwd() + "/" + 'config/config.txt'
+DATABASE = os.getcwd() + "/" + 'database'
+LOG_PATH = DATABASE + '/log_execucao.xlsx'
 
 def get_portal_cookies():
     """

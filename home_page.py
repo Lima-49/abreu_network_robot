@@ -10,7 +10,8 @@ import header
 import extracao_dados as ed
 
 OUTPUT_PATH = os.getcwd() + "/" + 'files' + '/log_view.csv'
-LOG_PATH = r'database\log_execucao.xlsx'
+DATABASE = os.getcwd() + "/" + 'database'
+LOG_PATH = DATABASE + '/log_execucao.xlsx'
 
 def amostragem_dados():
     """

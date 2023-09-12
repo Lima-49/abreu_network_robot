@@ -19,8 +19,9 @@ import black_list as bl
 
 #Dia atual
 actual_date = datetime.datetime.today()
-LOG_PATH = r'database\log_execucao.xlsx'
-CONFIG_RUN_PATH = r'database\config_execucao.xlsx'
+DATABASE = os.getcwd() + "/" + 'database'
+LOG_PATH = DATABASE + '/log_execucao.xlsx'
+CONFIG_RUN_PATH = DATABASE + '/config_execucao.xlsx'
 OUTPUT_PATH = os.getcwd() + "\\" + 'files'
 
 def dount_chart_execution(df_filt):
