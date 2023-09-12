@@ -22,7 +22,7 @@ actual_date = datetime.datetime.today()
 DATABASE = os.getcwd() + "/" + 'database'
 LOG_PATH = DATABASE + '/log_execucao.xlsx'
 CONFIG_RUN_PATH = DATABASE + '/config_execucao.xlsx'
-OUTPUT_PATH = os.getcwd() + "\\" + 'files'
+OUTPUT_PATH = os.getcwd() + "/" + 'files'
 
 def dount_chart_execution(df_filt):
     """
