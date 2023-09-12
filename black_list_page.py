@@ -246,7 +246,7 @@ def config_run():
                 st.balloons()
 
         #mostrando o novo  df criado
-        df_show.read_excel(f'{OUTPUT_PATH}/black_list.xlsx')
+        df_show = pd.read_excel(f'{OUTPUT_PATH}/black_list.xlsx')
         st.dataframe(df_show, width=800)
 
         # Exiba o gráfico no Streamlit
